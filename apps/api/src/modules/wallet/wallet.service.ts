@@ -2,10 +2,13 @@ import { eq, desc, sql } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import { wallets, walletLedger, deposits } from '../../db/schema.js'
 import { InsufficientBalanceError, NotFoundError, ConflictError } from '../../shared/errors.js'
+import type { IHashnutClient } from './hashnut.client.js'
 import { HashnutClient } from './hashnut.client.js'
+import { MockHashnutClient } from './hashnut.mock.js'
 import { config } from '../../config.js'
 
-function getHashnutClient(): HashnutClient {
+function getHashnutClient(): IHashnutClient {
+  if (config.HASHNUT_MOCK) return new MockHashnutClient()
   return new HashnutClient({
     mchNo: config.HASHNUT_MCH_NO,
     appId: config.HASHNUT_APP_ID,

@@ -14,7 +14,9 @@
  *  5. Always return 200 "success" — Hashnut retries 3 times if we don't
  */
 import type { FastifyInstance } from 'fastify'
+import type { IHashnutClient } from '../wallet/hashnut.client.js'
 import { HashnutClient } from '../wallet/hashnut.client.js'
+import { MockHashnutClient } from '../wallet/hashnut.mock.js'
 import {
   creditBalance,
   markDepositConfirming,
@@ -62,16 +64,16 @@ export default async function hashnutWebhookRoutes(app: FastifyInstance) {
         }
 
         case HASHNUT_STATE.SUCCESS: {
-          // Query Hashnut to get the actual amount and txHash
-          // This is the recommended pattern from Hashnut docs to validate before crediting
-          const hashnut = new HashnutClient({
-            mchNo: config.HASHNUT_MCH_NO,
-            appId: config.HASHNUT_APP_ID,
-            secretKey: config.HASHNUT_SECRET_KEY,
-            baseUrl: config.HASHNUT_SANDBOX
-              ? config.HASHNUT_SANDBOX_BASE_URL
-              : config.HASHNUT_BASE_URL,
-          })
+          const hashnut: IHashnutClient = config.HASHNUT_MOCK
+            ? new MockHashnutClient()
+            : new HashnutClient({
+                mchNo: config.HASHNUT_MCH_NO,
+                appId: config.HASHNUT_APP_ID,
+                secretKey: config.HASHNUT_SECRET_KEY,
+                baseUrl: config.HASHNUT_SANDBOX
+                  ? config.HASHNUT_SANDBOX_BASE_URL
+                  : config.HASHNUT_BASE_URL,
+              })
 
           const order = await hashnut.queryOrder(body.accessSign)
 

@@ -12,6 +12,7 @@ import orderRoutes from './modules/orders/order.routes.js'
 import domainRoutes from './modules/domains/domain.routes.js'
 import adminRoutes from './modules/admin/admin.routes.js'
 import hashnutWebhookRoutes from './modules/webhooks/hashnut.routes.js'
+import devRoutes from './modules/webhooks/dev.routes.js'
 
 // Plugins
 import authPlugin from './plugins/auth.js'
@@ -60,6 +61,12 @@ export async function buildApp() {
   await app.register(adminRoutes, { prefix: '/api/v1/platform' })
   // Webhook routes — no auth middleware, Hashnut calls this directly
   await app.register(hashnutWebhookRoutes, { prefix: '/api/v1' })
+
+  // Dev-only simulation routes
+  if (config.NODE_ENV !== 'production') {
+    await app.register(devRoutes, { prefix: '/api/v1/dev' })
+    app.log.info('Dev simulation routes enabled at /api/v1/dev')
+  }
 
   // Health check
   app.get('/health', async () => ({ status: 'ok' }))

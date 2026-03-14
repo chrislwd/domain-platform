@@ -20,6 +20,7 @@ const envSchema = z.object({
   DEPOSIT_REQUIRED_CONFIRMATIONS: z.coerce.number().default(6),
 
   // Hashnut payment gateway
+  HASHNUT_MOCK: z.string().transform((v) => v === 'true').default('true'),
   HASHNUT_MCH_NO: z.string().default(''),
   HASHNUT_APP_ID: z.string().default(''),
   HASHNUT_SECRET_KEY: z.string().default(''),

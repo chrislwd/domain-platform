@@ -48,6 +48,13 @@ export interface QueryOrderResponse {
   paidAt?: string
 }
 
+// ─── Shared interface ─────────────────────────────────────────────────────
+
+export interface IHashnutClient {
+  createOrder(params: CreateOrderParams): Promise<CreateOrderResponse>
+  queryOrder(accessSign: string): Promise<QueryOrderResponse>
+}
+
 // ─── HMAC signature ────────────────────────────────────────────────────────
 
 /**
@@ -71,7 +78,7 @@ function buildSignature(params: Record<string, string>, secretKey: string): stri
 
 // ─── Client ────────────────────────────────────────────────────────────────
 
-export class HashnutClient {
+export class HashnutClient implements IHashnutClient {
   constructor(private readonly cfg: HashnutConfig) {}
 
   private sign(params: Record<string, string>): string {
