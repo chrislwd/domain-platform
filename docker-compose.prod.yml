@@ -1,0 +1,75 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      API_PUBLIC_URL: ${API_PUBLIC_URL}
+      HASHNUT_MOCK: ${HASHNUT_MOCK:-false}
+      HASHNUT_MCH_NO: ${HASHNUT_MCH_NO}
+      HASHNUT_APP_ID: ${HASHNUT_APP_ID}
+      HASHNUT_SECRET_KEY: ${HASHNUT_SECRET_KEY}
+      HASHNUT_SANDBOX: ${HASHNUT_SANDBOX:-false}
+      PROVIDER: ${PROVIDER:-namecheap}
+      PROVIDER_NAMECHEAP_API_KEY: ${PROVIDER_NAMECHEAP_API_KEY}
+      PROVIDER_NAMECHEAP_API_USER: ${PROVIDER_NAMECHEAP_API_USER}
+      PROVIDER_NAMECHEAP_CLIENT_IP: ${PROVIDER_NAMECHEAP_CLIENT_IP}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM}
+      EMAIL_ENABLED: 'true'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL}/api/v1
+      NEXT_PUBLIC_APP_URL: ${APP_PUBLIC_URL}
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: domain_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

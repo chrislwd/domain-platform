@@ -1,11 +1,12 @@
 import { eq, desc, sql } from 'drizzle-orm'
 import { db } from '../../db/index.js'
-import { wallets, walletLedger, deposits } from '../../db/schema.js'
+import { wallets, walletLedger, deposits, users, orgMemberships } from '../../db/schema.js'
 import { InsufficientBalanceError, NotFoundError, ConflictError } from '../../shared/errors.js'
 import type { IHashnutClient } from './hashnut.client.js'
 import { HashnutClient } from './hashnut.client.js'
 import { MockHashnutClient } from './hashnut.mock.js'
 import { config } from '../../config.js'
+import { enqueueNotification } from '../../queues/index.js'
 
 function getHashnutClient(): IHashnutClient {
   if (config.HASHNUT_MOCK) return new MockHashnutClient()
@@ -285,6 +286,35 @@ export async function creditBalance(
       })
       .where(eq(deposits.id, depositId))
   })
+
+  // Fire-and-forget notification
+  getOrgOwnerEmail(deposit.orgId).then(async ({ email, orgName, newBalance }) => {
+    if (!email) return
+    await enqueueNotification({
+      type: 'deposit_confirmed',
+      to: email,
+      orgName,
+      amount,
+      chain: deposit.chain,
+      txHash,
+      newBalance,
+    })
+  }).catch(console.error)
+}
+
+async function getOrgOwnerEmail(orgId: string): Promise<{ email: string | null; orgName: string; newBalance: string }> {
+  const [membership, wallet] = await Promise.all([
+    db.query.orgMemberships.findFirst({
+      where: (m, { eq: eqFn, and }) => and(eqFn(m.orgId, orgId), eqFn(m.role, 'owner')),
+      with: { user: true, org: true },
+    }),
+    db.query.wallets.findFirst({ where: eq(wallets.orgId, orgId) }),
+  ])
+  return {
+    email: (membership as any)?.user?.email ?? null,
+    orgName: (membership as any)?.org?.name ?? '',
+    newBalance: wallet?.availableBalance ?? '0',
+  }
 }
 
 /**

@@ -4,6 +4,7 @@ import { domains, domainRenewals } from '../../db/schema.js'
 import { freezeBalance, captureBalance, releaseBalance } from '../wallet/wallet.service.js'
 import { getProvider } from './provider/registry.js'
 import { NotFoundError } from '../../shared/errors.js'
+import { scheduleRenewalReminders } from '../../queues/index.js'
 
 export async function listDomains(
   orgId: string,
@@ -144,6 +145,9 @@ async function processRenewal(
       .where(eq(domainRenewals.id, renewalId))
 
     await captureBalance(orgId, price, renewalId)
+
+    // Reschedule renewal reminders for the new expiry date
+    scheduleRenewalReminders(domain.id, domain.domainName, orgId, result.newExpiresAt).catch(console.error)
   } else {
     await db.update(domainRenewals)
       .set({ status: 'failed', updatedAt: new Date() })

@@ -1,10 +1,11 @@
 import { eq, inArray, sql, desc } from 'drizzle-orm'
 import { db } from '../../db/index.js'
-import { purchaseOrders, purchaseOrderItems, organizations, domains } from '../../db/schema.js'
+import { purchaseOrders, purchaseOrderItems, organizations, domains, orgMemberships } from '../../db/schema.js'
 import { freezeBalance, captureBalance, releaseBalance } from '../wallet/wallet.service.js'
 import { getProvider } from '../domains/provider/registry.js'
 import { ConflictError, NotFoundError } from '../../shared/errors.js'
 import { config } from '../../config.js'
+import { enqueueNotification, scheduleRenewalReminders } from '../../queues/index.js'
 
 export interface CreateOrderItem {
   domainName: string
@@ -56,12 +57,33 @@ export async function createOrder(
   })
   .then(async (order) => {
     if (order.status === 'pending') {
-      // Freeze balance and dispatch async
       await freezeBalance(orgId, totalEstimated, order.id)
       processOrder(order.id, orgId).catch(console.error)
+    } else if (order.status === 'awaiting_review') {
+      // Notify org owner that order needs review
+      getOrgOwnerEmail(orgId).then(async (email) => {
+        if (!email) return
+        const org = await db.query.organizations.findFirst({ where: eq(organizations.id, orgId) })
+        await enqueueNotification({
+          type: 'order_awaiting_review',
+          to: email,
+          orgName: org?.name ?? '',
+          orderId: order.id,
+          totalEstimated,
+          reason: order.riskReviewReason ?? '',
+        })
+      }).catch(console.error)
     }
     return order
   })
+}
+
+async function getOrgOwnerEmail(orgId: string): Promise<string | null> {
+  const membership = await db.query.orgMemberships.findFirst({
+    where: (m, { eq: eqFn, and }) => and(eqFn(m.orgId, orgId), eqFn(m.role, 'owner')),
+    with: { user: true },
+  })
+  return (membership as any)?.user?.email ?? null
 }
 
 function evaluateRisk(itemCount: number, totalAmount: number, orgRiskScore: number): boolean {
@@ -160,6 +182,43 @@ export async function processOrder(orderId: string, orgId: string) {
   await db.update(purchaseOrders)
     .set({ status: finalStatus, totalCaptured: totalCaptured.toFixed(2), updatedAt: new Date() })
     .where(eq(purchaseOrders.id, orderId))
+
+  // Notify org owner + schedule renewal reminders for registered domains
+  notifyOrderCompleted(orderId, items, successCount, totalCaptured).catch(console.error)
+}
+
+async function notifyOrderCompleted(
+  orderId: string,
+  items: typeof purchaseOrderItems.$inferSelect[],
+  successCount: number,
+  totalCaptured: number,
+) {
+  const order = await db.query.purchaseOrders.findFirst({ where: eq(purchaseOrders.id, orderId) })
+  if (!order) return
+
+  const ownerEmail = await getOrgOwnerEmail(order.orgId)
+  if (ownerEmail) {
+    const org = await db.query.organizations.findFirst({ where: eq(organizations.id, order.orgId) })
+    await enqueueNotification({
+      type: 'order_completed',
+      to: ownerEmail,
+      orgName: org?.name ?? '',
+      orderId,
+      totalCharged: totalCaptured.toFixed(2),
+      successCount,
+      failedCount: items.length - successCount,
+    })
+  }
+
+  // Schedule renewal reminders for each successfully registered domain
+  const successfulDomains = await db.query.domains.findMany({
+    where: (d, { inArray: inArr }) =>
+      inArr(d.orderItemId, items.filter((i) => i.status === 'success').map((i) => i.id)),
+  })
+
+  for (const domain of successfulDomains) {
+    await scheduleRenewalReminders(domain.id, domain.domainName, domain.orgId, domain.expiresAt)
+  }
 }
 
 export async function approveOrder(orderId: string, reviewerId: string) {

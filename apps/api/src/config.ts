@@ -32,6 +32,11 @@ const envSchema = z.object({
   // Default deposit chain
   DEPOSIT_DEFAULT_CHAIN: z.enum(['TRC20', 'ERC20', 'BEP20']).default('TRC20'),
 
+  // Email (Resend)
+  RESEND_API_KEY: z.string().default(''),
+  EMAIL_FROM: z.string().default('noreply@yourdomain.com'),
+  EMAIL_ENABLED: z.string().transform((v) => v === 'true').default('false'),
+
   // Provider selection: 'mock' | 'namecheap'
   PROVIDER: z.enum(['mock', 'namecheap']).default('mock'),
 

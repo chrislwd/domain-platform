@@ -1,0 +1,32 @@
+[build]
+builder = "DOCKERFILE"
+
+# ─── API service ──────────────────────────────────────────────────────────────
+# Configure as a service in Railway dashboard pointing to apps/api/Dockerfile
+
+# ─── Web service ─────────────────────────────────────────────────────────────
+# Configure as a separate service pointing to apps/web/Dockerfile
+
+# ─── Required environment variables ──────────────────────────────────────────
+# Set in Railway dashboard → Variables for each service:
+#
+# API service:
+#   DATABASE_URL        (Railway PostgreSQL plugin — auto-injected)
+#   REDIS_URL           (Railway Redis plugin — auto-injected)
+#   JWT_SECRET
+#   JWT_REFRESH_SECRET
+#   API_PUBLIC_URL      https://your-api.up.railway.app
+#   EMAIL_ENABLED       true
+#   RESEND_API_KEY
+#   EMAIL_FROM          noreply@yourdomain.com
+#   PROVIDER            namecheap   (or mock for staging)
+#   HASHNUT_MOCK        false
+#   HASHNUT_MCH_NO
+#   HASHNUT_APP_ID
+#   HASHNUT_SECRET_KEY
+#   HASHNUT_SANDBOX     false
+#   ... (see .env.example for full list)
+#
+# Web service:
+#   NEXT_PUBLIC_API_URL https://your-api.up.railway.app/api/v1
+#   NEXT_PUBLIC_APP_URL https://your-app.up.railway.app
