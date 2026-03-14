@@ -2,11 +2,9 @@ import { eq, inArray, sql, desc } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import { purchaseOrders, purchaseOrderItems, organizations, domains } from '../../db/schema.js'
 import { freezeBalance, captureBalance, releaseBalance } from '../wallet/wallet.service.js'
-import { MockDomainProvider } from '../domains/provider/mock.adapter.js'
-import { ConflictError, NotFoundError, ForbiddenError } from '../../shared/errors.js'
+import { getProvider } from '../domains/provider/registry.js'
+import { ConflictError, NotFoundError } from '../../shared/errors.js'
 import { config } from '../../config.js'
-
-const provider = new MockDomainProvider()
 
 export interface CreateOrderItem {
   domainName: string
@@ -99,13 +97,21 @@ export async function processOrder(orderId: string, orgId: string) {
       .set({ status: 'processing' })
       .where(eq(purchaseOrderItems.id, item.id))
 
+    const tld = item.domainName.split('.').slice(1).join('.')
+    const provider = getProvider(tld)
+
     const result = await provider.registerDomain({
       domainName: item.domainName,
       years: item.years,
       registrantContact: {
-        firstName: 'Domain', lastName: 'Admin', email: 'admin@example.com',
-        phone: '+1.5555555555', address: '123 Main St', city: 'City',
-        country: 'US', postalCode: '10001',
+        firstName: config.REGISTRANT_FIRST_NAME,
+        lastName: config.REGISTRANT_LAST_NAME,
+        email: config.REGISTRANT_EMAIL,
+        phone: config.REGISTRANT_PHONE,
+        address: config.REGISTRANT_ADDRESS,
+        city: config.REGISTRANT_CITY,
+        country: config.REGISTRANT_COUNTRY,
+        postalCode: config.REGISTRANT_POSTAL_CODE,
       },
     })
 
@@ -123,7 +129,7 @@ export async function processOrder(orderId: string, orgId: string) {
         orgId,
         orderItemId: item.id,
         domainName: item.domainName,
-        tld: item.domainName.split('.').pop() ?? '',
+        tld: item.domainName.split('.').slice(1).join('.'),
         providerName: provider.name,
         providerDomainId: result.providerDomainId,
         status: 'active',

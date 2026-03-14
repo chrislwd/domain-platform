@@ -1,10 +1,8 @@
 import { eq, desc, sql } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import { searchSessions, searchResults } from '../../db/schema.js'
-import { MockDomainProvider } from '../domains/provider/mock.adapter.js'
+import { getProvider } from '../domains/provider/registry.js'
 import { ValidationError, NotFoundError } from '../../shared/errors.js'
-
-const provider = new MockDomainProvider()
 const MAX_DOMAINS_PER_REQUEST = 500
 const CONCURRENCY = 20
 const RESULT_TTL_HOURS = 24
@@ -37,6 +35,8 @@ async function processSearch(sessionId: string, domains: string[]) {
   let hasError = false
 
   // Process in chunks to respect concurrency limit
+  const provider = getProvider()
+
   for (let i = 0; i < domains.length; i += CONCURRENCY) {
     const chunk = domains.slice(i, i + CONCURRENCY)
 
@@ -51,7 +51,7 @@ async function processSearch(sessionId: string, domains: string[]) {
           registrationPrice: r.registrationPrice.toFixed(2),
           renewalPrice: r.renewalPrice.toFixed(2),
           currency: r.currency,
-          providerName: provider.name,
+          providerName: provider.name as string,
           restrictionNote: r.restrictionNote,
           expiresAt,
         })),

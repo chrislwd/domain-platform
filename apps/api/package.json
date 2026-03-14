@@ -23,6 +23,7 @@
     "ioredis": "^5.3.2",
     "pg": "^8.11.5",
     "postgres": "^3.4.4",
+    "fast-xml-parser": "^4.3.6",
     "zod": "^3.23.4"
   },
   "devDependencies": {

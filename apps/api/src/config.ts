@@ -18,6 +18,25 @@ const envSchema = z.object({
   RISK_AMOUNT_THRESHOLD: z.coerce.number().default(5000),
 
   DEPOSIT_REQUIRED_CONFIRMATIONS: z.coerce.number().default(6),
+
+  // Provider selection: 'mock' | 'namecheap'
+  PROVIDER: z.enum(['mock', 'namecheap']).default('mock'),
+
+  // Namecheap
+  PROVIDER_NAMECHEAP_API_KEY: z.string().default(''),
+  PROVIDER_NAMECHEAP_API_USER: z.string().default(''),
+  PROVIDER_NAMECHEAP_CLIENT_IP: z.string().default(''),
+  PROVIDER_NAMECHEAP_SANDBOX: z.string().transform((v) => v !== 'false').default('true'),
+
+  // Default registrant contact (used when org hasn't configured their own)
+  REGISTRANT_FIRST_NAME: z.string().default('Domain'),
+  REGISTRANT_LAST_NAME: z.string().default('Admin'),
+  REGISTRANT_EMAIL: z.string().default('admin@example.com'),
+  REGISTRANT_PHONE: z.string().default('+1.5555555555'),
+  REGISTRANT_ADDRESS: z.string().default('123 Main St'),
+  REGISTRANT_CITY: z.string().default('New York'),
+  REGISTRANT_COUNTRY: z.string().default('US'),
+  REGISTRANT_POSTAL_CODE: z.string().default('10001'),
 })
 
 const parsed = envSchema.safeParse(process.env)

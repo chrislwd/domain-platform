@@ -2,10 +2,8 @@ import { eq, lte, and, desc, sql } from 'drizzle-orm'
 import { db } from '../../db/index.js'
 import { domains, domainRenewals } from '../../db/schema.js'
 import { freezeBalance, captureBalance, releaseBalance } from '../wallet/wallet.service.js'
-import { MockDomainProvider } from './provider/mock.adapter.js'
+import { getProvider } from './provider/registry.js'
 import { NotFoundError } from '../../shared/errors.js'
-
-const provider = new MockDomainProvider()
 
 export async function listDomains(
   orgId: string,
@@ -40,6 +38,7 @@ export async function getDomain(domainId: string, orgId: string) {
 export async function updateNameservers(domainId: string, orgId: string, nameservers: string[]) {
   const domain = await getDomain(domainId, orgId)
 
+  const provider = getProvider(domain.tld)
   const result = await provider.updateNameservers({
     domainName: domain.domainName,
     providerDomainId: domain.providerDomainId ?? '',
@@ -128,6 +127,7 @@ async function processRenewal(
   })
   if (!renewal) return
 
+  const provider = getProvider(domain.tld)
   const result = await provider.renewDomain({
     domainName: domain.domainName,
     providerDomainId: domain.providerDomainId ?? '',
