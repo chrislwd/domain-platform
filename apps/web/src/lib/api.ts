@@ -67,6 +67,18 @@ export const orderApi = {
   get: (orderId: string) => api.get(`/orders/${orderId}`),
 }
 
+// Nameserver templates
+export const templateApi = {
+  list: () => api.get<any[]>('/nameserver-templates'),
+  create: (name: string, nameservers: string[]) =>
+    api.post<any>('/nameserver-templates', { name, nameservers }),
+  update: (id: string, name: string, nameservers: string[]) =>
+    api.patch<any>(`/nameserver-templates/${id}`, { name, nameservers }),
+  delete: (id: string) => api.delete(`/nameserver-templates/${id}`),
+  apply: (templateId: string, domainIds: string[]) =>
+    api.post<any>(`/nameserver-templates/${templateId}/apply`, { domainIds }),
+}
+
 // Domains
 export const domainApi = {
   list: (page = 1) => api.get(`/domains?page=${page}`),

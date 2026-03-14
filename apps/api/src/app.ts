@@ -10,6 +10,7 @@ import walletRoutes from './modules/wallet/wallet.routes.js'
 import searchRoutes from './modules/search/search.routes.js'
 import orderRoutes from './modules/orders/order.routes.js'
 import domainRoutes from './modules/domains/domain.routes.js'
+import templateRoutes from './modules/domains/template.routes.js'
 import adminRoutes from './modules/admin/admin.routes.js'
 import hashnutWebhookRoutes from './modules/webhooks/hashnut.routes.js'
 import devRoutes from './modules/webhooks/dev.routes.js'
@@ -58,6 +59,8 @@ export async function buildApp() {
   await app.register(searchRoutes, { prefix: '/api/v1/search' })
   await app.register(orderRoutes, { prefix: '/api/v1/orders' })
   await app.register(domainRoutes, { prefix: '/api/v1/domains' })
+  await app.register(templateRoutes, { prefix: '/api/v1/nameserver-templates' })
+
   await app.register(adminRoutes, { prefix: '/api/v1/platform' })
   // Webhook routes — no auth middleware, Hashnut calls this directly
   await app.register(hashnutWebhookRoutes, { prefix: '/api/v1' })

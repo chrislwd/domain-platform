@@ -244,6 +244,22 @@ export const domains = pgTable(
   ],
 )
 
+export const nameserverTemplates = pgTable(
+  'nameserver_templates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id').notNull().references(() => organizations.id),
+    name: varchar('name', { length: 100 }).notNull(),
+    nameservers: text('nameservers').array().notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('uq_ns_template_org_name').on(t.orgId, t.name),
+    index('idx_ns_templates_org').on(t.orgId),
+  ],
+)
+
 export const domainRenewals = pgTable('domain_renewals', {
   id: uuid('id').primaryKey().defaultRandom(),
   domainId: uuid('domain_id').notNull().references(() => domains.id),
