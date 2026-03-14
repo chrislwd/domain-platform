@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import { useRouter } from 'next/navigation'
 import { orderApi } from '@/lib/api'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -14,6 +15,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function OrdersPage() {
+  const router = useRouter()
   const { data, isLoading } = useSWR('/orders', () => orderApi.list())
 
   return (
@@ -36,7 +38,7 @@ export default function OrdersPage() {
             </thead>
             <tbody>
               {(data as any)?.orders?.map((o: any) => (
-                <tr key={o.id} className="border-t hover:bg-gray-50 cursor-pointer">
+                <tr key={o.id} onClick={() => router.push(`/dashboard/orders/${o.id}`)} className="border-t hover:bg-gray-50 cursor-pointer">
                   <td className="px-5 py-2 font-mono text-xs">{o.id.slice(0, 8)}...</td>
                   <td className="px-5 py-2">
                     <span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_COLORS[o.status] ?? ''}`}>
