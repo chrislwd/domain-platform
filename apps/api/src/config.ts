@@ -19,6 +19,18 @@ const envSchema = z.object({
 
   DEPOSIT_REQUIRED_CONFIRMATIONS: z.coerce.number().default(6),
 
+  // Hashnut payment gateway
+  HASHNUT_MCH_NO: z.string().default(''),
+  HASHNUT_APP_ID: z.string().default(''),
+  HASHNUT_SECRET_KEY: z.string().default(''),
+  HASHNUT_BASE_URL: z.string().default('https://api.hashnut.io'),
+  HASHNUT_SANDBOX_BASE_URL: z.string().default('https://testnet-api.hashnut.io'),
+  HASHNUT_SANDBOX: z.string().transform((v) => v !== 'false').default('true'),
+  // The public URL of this API server (used for Hashnut webhook notifyUrl)
+  API_PUBLIC_URL: z.string().default('http://localhost:3001'),
+  // Default deposit chain
+  DEPOSIT_DEFAULT_CHAIN: z.enum(['TRC20', 'ERC20', 'BEP20']).default('TRC20'),
+
   // Provider selection: 'mock' | 'namecheap'
   PROVIDER: z.enum(['mock', 'namecheap']).default('mock'),
 

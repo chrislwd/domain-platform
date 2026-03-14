@@ -11,6 +11,7 @@ import searchRoutes from './modules/search/search.routes.js'
 import orderRoutes from './modules/orders/order.routes.js'
 import domainRoutes from './modules/domains/domain.routes.js'
 import adminRoutes from './modules/admin/admin.routes.js'
+import hashnutWebhookRoutes from './modules/webhooks/hashnut.routes.js'
 
 // Plugins
 import authPlugin from './plugins/auth.js'
@@ -57,6 +58,8 @@ export async function buildApp() {
   await app.register(orderRoutes, { prefix: '/api/v1/orders' })
   await app.register(domainRoutes, { prefix: '/api/v1/domains' })
   await app.register(adminRoutes, { prefix: '/api/v1/platform' })
+  // Webhook routes — no auth middleware, Hashnut calls this directly
+  await app.register(hashnutWebhookRoutes, { prefix: '/api/v1' })
 
   // Health check
   app.get('/health', async () => ({ status: 'ok' }))

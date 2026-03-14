@@ -46,7 +46,11 @@ export const walletApi = {
   getBalance: () => api.get<{ availableBalance: string; frozenBalance: string }>('/wallet'),
   getDeposits: (page = 1) => api.get(`/wallet/deposits?page=${page}`),
   getLedger: (page = 1) => api.get(`/wallet/ledger?page=${page}`),
-  createDepositRequest: () => api.get('/wallet/deposit-address'),
+  createDeposit: (amount: string, chain: 'TRC20' | 'ERC20' | 'BEP20' = 'TRC20') =>
+    api.post<{ id: string; paymentUrl?: string; depositAddress: string; requestedAmount: string }>(
+      '/wallet/deposits',
+      { amount, chain },
+    ),
 }
 
 // Search

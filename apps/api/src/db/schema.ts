@@ -127,13 +127,19 @@ export const deposits = pgTable('deposits', {
   id: uuid('id').primaryKey().defaultRandom(),
   orgId: uuid('org_id').notNull().references(() => organizations.id),
   walletId: uuid('wallet_id').notNull().references(() => wallets.id),
-  depositAddress: varchar('deposit_address', { length: 255 }).notNull(),
+  // Hashnut fields
+  hashnutOrderId: varchar('hashnut_order_id', { length: 255 }),     // Hashnut's payOrderId
+  hashnutAccessSign: varchar('hashnut_access_sign', { length: 512 }), // for querying order
+  paymentUrl: text('payment_url'),                                   // checkout URL shown to user
+  // On-chain details (populated after Hashnut confirms)
+  depositAddress: varchar('deposit_address', { length: 255 }),
   txHash: varchar('tx_hash', { length: 255 }),
   network: varchar('network', { length: 50 }).notNull().default('tron'),
-  amount: numeric('amount', { precision: 18, scale: 6 }),
-  confirmations: integer('confirmations').notNull().default(0),
-  requiredConfirmations: integer('required_confirmations').notNull().default(6),
+  chain: varchar('chain', { length: 50 }).notNull().default('TRC20'),
+  requestedAmount: numeric('requested_amount', { precision: 18, scale: 6 }).notNull(),
+  amount: numeric('amount', { precision: 18, scale: 6 }),            // actual received amount
   status: depositStatusEnum('status').notNull().default('pending'),
+  expiresAt: timestamp('expires_at'),
   creditedAt: timestamp('credited_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
